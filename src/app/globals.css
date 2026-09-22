@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Design tokens — carried over verbatim from the legacy stylesheet
+   ========================================================================== */
+@theme {
+  --color-gold: #c5a059;
+  --color-gold-light: #d4af37;
+  --color-gold-dark: #9a7b3c;
+
+  --color-ink: #0a0a0a;
+  --color-ink-soft: #121212;
+  --color-ink-card: #1a1a1a;
+  --color-ink-border: #2a2a2a;
+
+  --color-cream: #f5f5f5;
+  --color-muted: #a8a8a8;
+
+  --font-heading: var(--font-cinzel), "Times New Roman", serif;
+  --font-body: var(--font-lato), "Segoe UI", sans-serif;
+
+  --shadow-gold: 0 4px 24px rgb(197 160 89 / 0.15);
+  --shadow-gold-lg: 0 18px 44px rgb(197 160 89 / 0.22);
+
+  --spacing-header: 90px;
+
+  /*
+   * Motion. The site previously eased almost everything on easeOutExpo
+   * (0.16, 1, 0.3, 1), which leaves at very high velocity and then crawls —
+   * it reads as a snap however long the duration is.
+   *
+   * `glide` (easeOutCubic) is for one-way motion — the scroll reveal and the
+   * button's gold sweep. `soft` is a symmetric ease-in-out for anything
+   * reversible: a hover runs backwards when the pointer leaves, and a
+   * one-way curve played in reverse is what made hover-off feel abrupt.
+   */
+  --ease-glide: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /*
+   * ~20 link hovers across the nav, footer and TopBar use a bare
+   * `transition-colors` and so inherit this. Tailwind ships 150ms, which is
+   * the snappiest motion on the site and sits on exactly the elements a
+   * visitor touches most. Raising the default covers them all without
+   * pinning a duration onto every one.
+   */
+  --default-transition-duration: 300ms;
+}
+
+/* The header is a lot of vertical real estate on a phone. Shrink the token
+   rather than the `h-header` usages, so the hero's min-height calc and the
+   nav sheet's offset stay correct at every width. */
+:root {
+  --spacing-header: 68px;
+}
+
+@media (width >= 40rem) {
+  :root {
+    --spacing-header: 90px;
+  }
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: var(--color-cream);
+    font-family: var(--font-body);
+    line-height: 1.7;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* iOS Safari zooms the page when a focused control's text is under 16px.
+     Every field on the site is 15px by design, so restore 16px on touch
+     devices only, where the zoom (not the type scale) is the problem. */
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-ink);
+  }
+
+  /* Gold scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-ink);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      var(--color-gold-dark),
+      var(--color-gold)
+    );
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gold-light);
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+/* The legacy container: width: min(1140px, 92%) */
+@utility shell {
+  width: min(1140px, 92%);
+  margin-inline: auto;
+}
+
+/* Gold gradient text used for emphasis inside headings */
+@utility text-gradient-gold {
+  background: linear-gradient(
+    100deg,
+    var(--color-gold-light),
+    var(--color-gold),
+    var(--color-gold-light)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/*
+ * Auto-fit card grids. The bare `minmax(280px, 1fr)` these replace forces a
+ * 280px track even when the container is narrower, which pushed the layout
+ * past the viewport on 320px phones. Wrapping the floor in `min(_, 100%)`
+ * lets the track collapse to the container instead.
+ */
+@utility grid-fit-240 {
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+@utility grid-fit-260 {
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+@utility grid-fit-280 {
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+}
+@utility grid-fit-300 {
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+}
+
+/* The thin gold divider under section titles */
+@utility rule-gold {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold),
+    transparent
+  );
+}
+
+/* ==========================================================================
+   Scroll reveal — elements start hidden and transition in when observed
+   ========================================================================== */
+[data-reveal] {
+  opacity: 0;
+  transition:
+    opacity 1s var(--ease-glide),
+    transform 1s var(--ease-glide);
+  will-change: opacity, transform;
+}
+
+[data-reveal="up"] {
+  transform: translateY(38px);
+}
+[data-reveal="left"] {
+  transform: translateX(-46px);
+}
+[data-reveal="right"] {
+  transform: translateX(46px);
+}
+[data-reveal="scale"] {
+  transform: scale(0.94);
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+   Motion preferences — no transforms, no smooth scroll, no counters in motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
